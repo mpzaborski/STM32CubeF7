@@ -19,6 +19,9 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "string.h"
 
 /** @addtogroup STM32F7xx_HAL_Examples
   * @{
@@ -32,12 +35,63 @@
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+UART_HandleTypeDef UartHandle;
+static TaskHandle_t xTaskToNotify = NULL;
+static TaskHandle_t xTask1 = NULL;
+static TaskHandle_t xTask2 = NULL;
+
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
 static void Error_Handler(void);
 static void CPU_CACHE_Enable(void);
 
 /* Private functions ---------------------------------------------------------*/
+void UartInit(void)
+{
+  UartHandle.Instance        = USART1;
+  UartHandle.Init.BaudRate   = 115200;
+  UartHandle.Init.WordLength = UART_WORDLENGTH_8B;
+  UartHandle.Init.StopBits   = UART_STOPBITS_1;
+  UartHandle.Init.Parity     = UART_PARITY_NONE;
+  UartHandle.Init.HwFlowCtl  = UART_HWCONTROL_NONE;
+  UartHandle.Init.OverSampling = UART_OVERSAMPLING_16;
+  UartHandle.Init.Mode       = UART_MODE_TX_RX;
+  UartHandle.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+
+  HAL_UART_Init(&UartHandle);
+  BSP_COM_Init(COM1,&UartHandle);
+}
+
+void vTask1( void *pvParameters )
+{
+  vTaskDelay(1000);
+  /* As per most tasks, this task is implemented in an infinite loop. */
+  for( ;; )
+  {
+    /* Print out the name of this task. */
+	BSP_LED_Toggle(LED1);
+    /* Delay for a period. */
+    vTaskDelay(1000);
+  }
+}
+
+void vTask2( void *pvParameters )
+{
+  vTaskDelay(1000);
+  uint32_t ulNotificationValue;
+  const TickType_t xMaxBlockTime = pdMS_TO_TICKS( 200 );
+  /* As per most tasks, this task is implemented in an infinite loop. */
+  char *pcCyclicMessage = (char *) pvParameters;
+  for( ;; )
+  {
+    /* Print out the name of this task. */
+    ulNotificationValue = ulTaskNotifyTake( pdFALSE, xMaxBlockTime);
+    if( ulNotificationValue == pdTRUE )
+    {
+      HAL_UART_Transmit(&UartHandle, (uint8_t *)pcCyclicMessage, strlen(pcCyclicMessage), 0xFFFF);
+    }
+  }
+}
 
 /**
   * @brief  Main program
@@ -50,6 +104,7 @@ int main(void)
      This function is provided as template implementation that User may integrate 
      in his application, to enhance the performance in case of use of AXI interface 
      with several masters. */
+  const char *pcTextForTask1 = "** Button pressed **\r\n";
 
   /* Enable the CPU Cache */
   CPU_CACHE_Enable();
@@ -65,17 +120,43 @@ int main(void)
   /* Configure the System clock to have a frequency of 216 MHz */
   SystemClock_Config();
 
+  BSP_LED_Init(LED1);
 
-  /* Add your application code here
-     */
+  UartInit();
 
+  BSP_PB_Init(BUTTON_KEY,BUTTON_MODE_EXTI);
 
-  /* Infinite loop */
-  while (1)
-  {
-  }
+  xTaskCreate(
+		  vTask1,/* Pointer to the function that implements the task. */
+		  "Task 1",/* Text name for the task.  This is to facilitate debugging only. */
+		  1000,/* Stack depth -small microcontrollers will use muchless stack than this. */
+		  NULL,/* This example does not use thetask parameter. */
+		  1, /* This task will run at priority 1. */
+		  &xTask1);
+
+  xTaskCreate(
+      vTask2,/* Pointer to the function that implements the task. */
+      "Task 2",/* Text name for the task.  This is to facilitate debugging only. */
+      1000,/* Stack depth -small microcontrollers will use muchless stack than this. */
+      (void *) pcTextForTask1,/* This example does not use thetask parameter. */
+      2, /* This task will run at priority 2. */
+      &xTask2);
+
+  vTaskStartScheduler();
+
+  while(1);
 }
 
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if (GPIO_Pin == GPIO_PIN_11)
+  {
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    vTaskNotifyGiveFromISR( xTask2, &xHigherPriorityTaskWoken );
+    portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
+  }
+}
 /**
   * @brief  System Clock Configuration
   *         The system Clock is configured as follow : 
@@ -145,6 +226,8 @@ static void Error_Handler(void)
   /* User may add here some code to deal with this error */
   while(1)
   {
+    BSP_LED_Toggle(LED1);
+    HAL_Delay(100);
   }
 }
 
