@@ -20,8 +20,8 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include "main.h"
 #include "stm32f7xx_it.h"
+#include "main.h"
 
 /** @addtogroup STM32F7xx_HAL_Examples
   * @{
@@ -104,6 +104,15 @@ void UsageFault_Handler(void)
 }
 
 /**
+  * @brief  This function handles SVCall exception.
+  * @param  None
+  * @retval None
+  */
+void SVC_Handler(void)
+{
+}
+
+/**
   * @brief  This function handles Debug Monitor exception.
   * @param  None
   * @retval None
@@ -112,11 +121,30 @@ void DebugMon_Handler(void)
 {
 }
 
+/**
+  * @brief  This function handles PendSVC exception.
+  * @param  None
+  * @retval None
+  */
+void PendSV_Handler(void)
+{
+}
+
+/**
+  * @brief  This function handles SysTick Handler.
+  * @param  None
+  * @retval None
+  */
+void SysTick_Handler(void)
+{
+  HAL_IncTick();
+}
 
 void EXTI15_10_IRQHandler(void)
 {
   HAL_GPIO_EXTI_IRQHandler(WAKEUP_BUTTON_PIN);
 }
+
 
 /******************************************************************************/
 /*                 STM32F7xx Peripherals Interrupt Handlers                   */
