@@ -36,36 +36,6 @@
 			<location>C:/Users/mateusz/projects/mpzaborski-stm32f7/Projects/STM32746G-Discovery/Templates/Inc</location>
 		</link>
 		<link>
-			<name>FreeRTOS/heap_1.c</name>
-			<type>1</type>
-			<locationURI>PARENT-5-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_1.c</locationURI>
-		</link>
-		<link>
-			<name>FreeRTOS/include</name>
-			<type>2</type>
-			<location>C:/Users/mateusz/projects/mpzaborski-stm32f7/Middlewares/Third_Party/FreeRTOS/Source/include</location>
-		</link>
-		<link>
-			<name>FreeRTOS/list.c</name>
-			<type>1</type>
-			<locationURI>PARENT-5-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/list.c</locationURI>
-		</link>
-		<link>
-			<name>FreeRTOS/port.c</name>
-			<type>1</type>
-			<locationURI>PARENT-5-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM7/r0p1/port.c</locationURI>
-		</link>
-		<link>
-			<name>FreeRTOS/queue.c</name>
-			<type>1</type>
-			<locationURI>PARENT-5-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/queue.c</locationURI>
-		</link>
-		<link>
-			<name>FreeRTOS/tasks.c</name>
-			<type>1</type>
-			<locationURI>PARENT-5-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/tasks.c</locationURI>
-		</link>
-		<link>
 			<name>Drivers/CMSIS/system_stm32f7xx.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/Src/system_stm32f7xx.c</locationURI>

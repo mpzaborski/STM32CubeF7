@@ -117,8 +117,6 @@
 									<listOptionValue builtIn="false" value="../../../../../../Utilities/Fonts"/>
 									<listOptionValue builtIn="false" value="../../../../../../Utilities/CPU"/>
 									<listOptionValue builtIn="false" value="../../../../../../Drivers/CMSIS/Include"/>
-									<listOptionValue builtIn="false" value="../../../../../../Middlewares/Third_Party/FreeRTOS/Source/include"/>
-									<listOptionValue builtIn="false" value="../FreeRTOS"/>
 								</option>
 								<option id="com.atollic.truestudio.gcc.symbols.defined.186830994" name="Defined symbols" superClass="com.atollic.truestudio.gcc.symbols.defined" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="USE_HAL_DRIVER"/>

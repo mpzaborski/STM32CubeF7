@@ -19,8 +19,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "FreeRTOS.h"
-#include "task.h"
 #include "string.h"
 
 /** @addtogroup STM32F7xx_HAL_Examples
@@ -41,8 +39,6 @@ ADC_HandleTypeDef    AdcHandle;
 /* Variable used to get converted value */
 __IO uint16_t uhADCxConvertedValue = 0;
 
-static TaskHandle_t xTask1 = NULL;
-static TaskHandle_t xTask2 = NULL;
 
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
@@ -50,10 +46,6 @@ static void Error_Handler(void);
 static void CPU_CACHE_Enable(void);
 
 /* Private functions ---------------------------------------------------------*/
-
-uint32_t HAL_GetTick (void) {
-    return xTaskGetTickCount();
-}
 
 void UartInit(void)
 {
@@ -110,54 +102,8 @@ void AdcInit(void)
     /* Channel Configuration Error */
     Error_Handler();
   }
-
-
-
 }
 
-
-void vTask1( void *pvParameters )
-{
-  vTaskDelay(1000);
-  /* As per most tasks, this task is implemented in an infinite loop. */
-  for( ;; )
-  {
-    /* Print out the name of this task. */
-	BSP_LED_Toggle(LED1);
-    /* Delay for a period. */
-    vTaskDelay(1000);
-  }
-}
-
-void vTask2( void *pvParameters )
-{
-  vTaskDelay(1000);
-  uint32_t ulNotificationValue;
-
-
-
-
-  const TickType_t xMaxBlockTime = pdMS_TO_TICKS( 200 );
-  /* As per most tasks, this task is implemented in an infinite loop. */
-  char *pcCyclicMessage = (char *) pvParameters;
-  for( ;; )
-  {
-    HAL_ADC_PollForConversion(&AdcHandle, 10);
-
-    /* Check if the continous conversion of regular channel is finished */
-    if(HAL_IS_BIT_SET(HAL_ADC_GetState(&AdcHandle), HAL_ADC_STATE_REG_EOC))
-    {
-      /*##-5- Get the converted value of regular channel  ########################*/
-      uhADCxConvertedValue = HAL_ADC_GetValue(&AdcHandle);
-    }
-    /* Print out the name of this task. */
-    ulNotificationValue = ulTaskNotifyTake( pdFALSE, xMaxBlockTime);
-    if( ulNotificationValue == pdTRUE )
-    {
-      HAL_UART_Transmit(&UartHandle, (uint8_t *)pcCyclicMessage, strlen(pcCyclicMessage), 0xFFFF);
-    }
-  }
-}
 
 /**
   * @brief  Main program
@@ -170,7 +116,6 @@ int main(void)
      This function is provided as template implementation that User may integrate 
      in his application, to enhance the performance in case of use of AXI interface 
      with several masters. */
-  const char *pcTextForTask1 = "** Button pressed **\r\n";
 
   /* Enable the CPU Cache */
   CPU_CACHE_Enable();
@@ -193,24 +138,6 @@ int main(void)
 
   BSP_PB_Init(BUTTON_KEY,BUTTON_MODE_EXTI);
 
-  xTaskCreate(
-		  vTask1,/* Pointer to the function that implements the task. */
-		  "Task 1",/* Text name for the task.  This is to facilitate debugging only. */
-		  1000,/* Stack depth -small microcontrollers will use muchless stack than this. */
-		  NULL,/* This example does not use thetask parameter. */
-		  1, /* This task will run at priority 1. */
-		  &xTask1);
-
-  xTaskCreate(
-      vTask2,/* Pointer to the function that implements the task. */
-      "Task 2",/* Text name for the task.  This is to facilitate debugging only. */
-      1000,/* Stack depth -small microcontrollers will use muchless stack than this. */
-      (void *) pcTextForTask1,/* This example does not use thetask parameter. */
-      2, /* This task will run at priority 2. */
-      &xTask2);
-
-  vTaskStartScheduler();
-
   while(1);
 }
 
@@ -219,9 +146,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
   if (GPIO_Pin == GPIO_PIN_11)
   {
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    vTaskNotifyGiveFromISR( xTask2, &xHigherPriorityTaskWoken );
-    portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
   }
 }
 /**
