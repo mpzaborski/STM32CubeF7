@@ -88,8 +88,6 @@ void AdcInit(void)
     Error_Handler();
   }
 
-  HAL_NVIC_SetPriority(ADC_IRQn, 5, 0);
-  HAL_NVIC_EnableIRQ(ADC_IRQn);
 
   /*##-2- Configure ADC regular channel ######################################*/
   sConfig.Channel      = ADC_CHANNEL_8;
