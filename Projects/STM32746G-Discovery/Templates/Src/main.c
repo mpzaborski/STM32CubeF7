@@ -20,6 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "string.h"
+#include <stdio.h>
 
 /** @addtogroup STM32F7xx_HAL_Examples
   * @{
@@ -72,15 +73,15 @@ void AdcInit(void)
   AdcHandle.Init.ClockPrescaler        = ADC_CLOCKPRESCALER_PCLK_DIV4;
   AdcHandle.Init.Resolution            = ADC_RESOLUTION_12B;
   AdcHandle.Init.ScanConvMode          = DISABLE;                       /* Sequencer disabled (ADC conversion on only 1 channel: channel set on rank 1) */
-  AdcHandle.Init.ContinuousConvMode    = DISABLE;                       /* Continuous mode disabled to have only 1 conversion at each conversion trig */
+  AdcHandle.Init.ContinuousConvMode    = ENABLE;                       /* Continuous mode disabled to have only 1 conversion at each conversion trig */
   AdcHandle.Init.DiscontinuousConvMode = DISABLE;                       /* Parameter discarded because sequencer is disabled */
-  AdcHandle.Init.NbrOfDiscConversion   = 0;
+  AdcHandle.Init.NbrOfDiscConversion   = 1;
   AdcHandle.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;        /* Conversion start trigged at each external event */
-  AdcHandle.Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T1_CC1;
+  AdcHandle.Init.ExternalTrigConv      = ADC_SOFTWARE_START;
   AdcHandle.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
   AdcHandle.Init.NbrOfConversion       = 1;
   AdcHandle.Init.DMAContinuousRequests = DISABLE;
-  AdcHandle.Init.EOCSelection          = DISABLE;
+  AdcHandle.Init.EOCSelection          = ADC_EOC_SEQ_CONV;
 
   if (HAL_ADC_Init(&AdcHandle) != HAL_OK)
   {
@@ -92,7 +93,7 @@ void AdcInit(void)
   /*##-2- Configure ADC regular channel ######################################*/
   sConfig.Channel      = ADC_CHANNEL_8;
   sConfig.Rank         = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
   sConfig.Offset       = 0;
 
   if (HAL_ADC_ConfigChannel(&AdcHandle, &sConfig) != HAL_OK)
@@ -110,6 +111,8 @@ void AdcInit(void)
   */
 int main(void)
 {
+  char buffer[40];
+
   /* This project template calls firstly CPU_CACHE_Enable() in order to enable the CPU Cache.
      This function is provided as template implementation that User may integrate 
      in his application, to enhance the performance in case of use of AXI interface 
@@ -130,13 +133,21 @@ int main(void)
   SystemClock_Config();
 
   BSP_LED_Init(LED1);
+  BSP_PB_Init(BUTTON_KEY,BUTTON_MODE_EXTI);
 
   UartInit();
   AdcInit();
 
-  BSP_PB_Init(BUTTON_KEY,BUTTON_MODE_EXTI);
-
-  while(1);
+  HAL_ADC_Start(&AdcHandle);
+  while(1)
+  {
+    /*##-5- Get the converted value of regular channel  ########################*/
+    uhADCxConvertedValue = HAL_ADC_GetValue(&AdcHandle);
+    sprintf(buffer, "Temperature: %.2f\r\n", (((float)uhADCxConvertedValue*5000.0/4096.0)/10.0)+2.0);
+    HAL_UART_Transmit(&UartHandle, (uint8_t*)buffer, strlen(buffer), 10);
+    //HAL_ADC_Stop(&AdcHandle);
+    HAL_Delay(1000);
+  }
 }
 
 
