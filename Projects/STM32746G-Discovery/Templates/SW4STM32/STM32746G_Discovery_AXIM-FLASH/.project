@@ -31,6 +31,11 @@
 			<locationURI>PARENT-2-PROJECT_LOC/readme.txt</locationURI>
 		</link>
 		<link>
+			<name>Example/Inc</name>
+			<type>2</type>
+			<location>C:/Users/mateusz/projects/mpzaborski-stm32f7/Projects/STM32746G-Discovery/Templates/Inc</location>
+		</link>
+		<link>
 			<name>FreeRTOS/heap_1.c</name>
 			<type>1</type>
 			<locationURI>PARENT-5-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_1.c</locationURI>

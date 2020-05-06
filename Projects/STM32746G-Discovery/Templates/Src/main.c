@@ -36,7 +36,11 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 UART_HandleTypeDef UartHandle;
-static TaskHandle_t xTaskToNotify = NULL;
+ADC_HandleTypeDef    AdcHandle;
+
+/* Variable used to get converted value */
+__IO uint16_t uhADCxConvertedValue = 0;
+
 static TaskHandle_t xTask1 = NULL;
 static TaskHandle_t xTask2 = NULL;
 
@@ -46,6 +50,11 @@ static void Error_Handler(void);
 static void CPU_CACHE_Enable(void);
 
 /* Private functions ---------------------------------------------------------*/
+
+uint32_t HAL_GetTick (void) {
+    return xTaskGetTickCount();
+}
+
 void UartInit(void)
 {
   UartHandle.Instance        = USART1;
@@ -61,6 +70,51 @@ void UartInit(void)
   HAL_UART_Init(&UartHandle);
   BSP_COM_Init(COM1,&UartHandle);
 }
+
+void AdcInit(void)
+{
+  ADC_ChannelConfTypeDef sConfig;
+
+  AdcHandle.Instance          = ADC3;
+
+  AdcHandle.Init.ClockPrescaler        = ADC_CLOCKPRESCALER_PCLK_DIV4;
+  AdcHandle.Init.Resolution            = ADC_RESOLUTION_12B;
+  AdcHandle.Init.ScanConvMode          = DISABLE;                       /* Sequencer disabled (ADC conversion on only 1 channel: channel set on rank 1) */
+  AdcHandle.Init.ContinuousConvMode    = DISABLE;                       /* Continuous mode disabled to have only 1 conversion at each conversion trig */
+  AdcHandle.Init.DiscontinuousConvMode = DISABLE;                       /* Parameter discarded because sequencer is disabled */
+  AdcHandle.Init.NbrOfDiscConversion   = 0;
+  AdcHandle.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;        /* Conversion start trigged at each external event */
+  AdcHandle.Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T1_CC1;
+  AdcHandle.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
+  AdcHandle.Init.NbrOfConversion       = 1;
+  AdcHandle.Init.DMAContinuousRequests = DISABLE;
+  AdcHandle.Init.EOCSelection          = DISABLE;
+
+  if (HAL_ADC_Init(&AdcHandle) != HAL_OK)
+  {
+    /* ADC initialization Error */
+    Error_Handler();
+  }
+
+  HAL_NVIC_SetPriority(ADC_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(ADC_IRQn);
+
+  /*##-2- Configure ADC regular channel ######################################*/
+  sConfig.Channel      = ADC_CHANNEL_8;
+  sConfig.Rank         = 1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
+  sConfig.Offset       = 0;
+
+  if (HAL_ADC_ConfigChannel(&AdcHandle, &sConfig) != HAL_OK)
+  {
+    /* Channel Configuration Error */
+    Error_Handler();
+  }
+
+
+
+}
+
 
 void vTask1( void *pvParameters )
 {
@@ -79,11 +133,23 @@ void vTask2( void *pvParameters )
 {
   vTaskDelay(1000);
   uint32_t ulNotificationValue;
+
+
+
+
   const TickType_t xMaxBlockTime = pdMS_TO_TICKS( 200 );
   /* As per most tasks, this task is implemented in an infinite loop. */
   char *pcCyclicMessage = (char *) pvParameters;
   for( ;; )
   {
+    HAL_ADC_PollForConversion(&AdcHandle, 10);
+
+    /* Check if the continous conversion of regular channel is finished */
+    if(HAL_IS_BIT_SET(HAL_ADC_GetState(&AdcHandle), HAL_ADC_STATE_REG_EOC))
+    {
+      /*##-5- Get the converted value of regular channel  ########################*/
+      uhADCxConvertedValue = HAL_ADC_GetValue(&AdcHandle);
+    }
     /* Print out the name of this task. */
     ulNotificationValue = ulTaskNotifyTake( pdFALSE, xMaxBlockTime);
     if( ulNotificationValue == pdTRUE )
@@ -123,6 +189,7 @@ int main(void)
   BSP_LED_Init(LED1);
 
   UartInit();
+  AdcInit();
 
   BSP_PB_Init(BUTTON_KEY,BUTTON_MODE_EXTI);
 
