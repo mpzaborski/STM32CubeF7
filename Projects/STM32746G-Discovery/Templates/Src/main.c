@@ -75,13 +75,13 @@ void AdcInit(void)
   AdcHandle.Init.ScanConvMode          = DISABLE;                       /* Sequencer disabled (ADC conversion on only 1 channel: channel set on rank 1) */
   AdcHandle.Init.ContinuousConvMode    = ENABLE;                       /* Continuous mode disabled to have only 1 conversion at each conversion trig */
   AdcHandle.Init.DiscontinuousConvMode = DISABLE;                       /* Parameter discarded because sequencer is disabled */
-  AdcHandle.Init.NbrOfDiscConversion   = 1;
+  AdcHandle.Init.NbrOfDiscConversion   = 0;
   AdcHandle.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;        /* Conversion start trigged at each external event */
-  AdcHandle.Init.ExternalTrigConv      = ADC_SOFTWARE_START;
+  AdcHandle.Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T1_CC1;
   AdcHandle.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
   AdcHandle.Init.NbrOfConversion       = 1;
-  AdcHandle.Init.DMAContinuousRequests = DISABLE;
-  AdcHandle.Init.EOCSelection          = ADC_EOC_SEQ_CONV;
+  AdcHandle.Init.DMAContinuousRequests = ENABLE;
+  AdcHandle.Init.EOCSelection          = DISABLE;
 
   if (HAL_ADC_Init(&AdcHandle) != HAL_OK)
   {
@@ -93,12 +93,18 @@ void AdcInit(void)
   /*##-2- Configure ADC regular channel ######################################*/
   sConfig.Channel      = ADC_CHANNEL_8;
   sConfig.Rank         = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_84CYCLES;
   sConfig.Offset       = 0;
 
   if (HAL_ADC_ConfigChannel(&AdcHandle, &sConfig) != HAL_OK)
   {
     /* Channel Configuration Error */
+    Error_Handler();
+  }
+
+  if(HAL_ADC_Start_DMA(&AdcHandle, (uint32_t*)&uhADCxConvertedValue, 1) != HAL_OK)
+  {
+    /* Start Conversation Error */
     Error_Handler();
   }
 }

@@ -27,8 +27,29 @@
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
+/* Definition for USARTx Pins */
+#define USARTx                           USART1
+#define USARTx_CLK_ENABLE()              __USART1_CLK_ENABLE()
+#define USARTx_RX_GPIO_CLK_ENABLE()      __GPIOB_CLK_ENABLE()
+#define USARTx_TX_GPIO_CLK_ENABLE()      __GPIOA_CLK_ENABLE()
+
+#define USARTx_FORCE_RESET()             __USART1_FORCE_RESET()
+#define USARTx_RELEASE_RESET()           __USART1_RELEASE_RESET()
+
+#define USARTx_TX_PIN                    GPIO_PIN_9
+#define USARTx_TX_GPIO_PORT              GPIOA
+#define USARTx_TX_AF                     GPIO_AF7_USART1
+#define USARTx_RX_PIN                    GPIO_PIN_7
+#define USARTx_RX_GPIO_PORT              GPIOB
+#define USARTx_RX_AF                     GPIO_AF7_USART1
+/* Definition for USARTx's NVIC */
+#define USARTx_IRQn                      USART1_IRQn
+#define USARTx_IRQHandler                USART1_IRQHandler
+
+
 /* Definition for ADCx clock resources */
 #define ADCx_CLK_ENABLE()                 __HAL_RCC_ADC3_CLK_ENABLE()
+#define DMAx_CLK_ENABLE()                 __HAL_RCC_DMA2_CLK_ENABLE()
 #define ADCx_CHANNEL_GPIO_CLOCK_ENABLE()  __HAL_RCC_GPIOF_CLK_ENABLE()
 
 #define ADCx_FORCE_RESET()                __HAL_RCC_ADC_FORCE_RESET()
@@ -41,8 +62,12 @@
 /* Definition for ADCx's Channel */
 #define ADCx_CHANNEL                      ADC_CHANNEL_8
 
+/* Definition for ADCx's DMA */
+#define ADCx_DMA_CHANNEL                  DMA_CHANNEL_2
+#define ADCx_DMA_STREAM                   DMA2_Stream0
 /* Definition for ADCx's NVIC */
-#define ADCx_IRQn                         ADC_IRQn
+#define ADCx_DMA_IRQn                     DMA2_Stream0_IRQn
+#define ADCx_DMA_IRQHandler               DMA2_Stream0_IRQHandler
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 

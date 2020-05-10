@@ -69,12 +69,15 @@
 void HAL_ADC_MspInit(ADC_HandleTypeDef *hadc)
 {
   GPIO_InitTypeDef          GPIO_InitStruct;
+  static DMA_HandleTypeDef  hdma_adc;
 
   /*##-1- Enable peripherals and GPIO Clocks #################################*/
   /* ADC3 Periph clock enable */
   ADCx_CLK_ENABLE();
   /* Enable GPIO clock ****************************************/
   ADCx_CHANNEL_GPIO_CLOCK_ENABLE();
+  /* Enable DMA2 clock */
+  DMAx_CLK_ENABLE();
 
   /*##-2- Configure peripheral GPIO ##########################################*/
   /* ADC Channel GPIO pin configuration */
@@ -83,8 +86,32 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *hadc)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(ADCx_CHANNEL_GPIO_PORT, &GPIO_InitStruct);
 
-  HAL_NVIC_SetPriority(ADCx_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(ADCx_IRQn);
+  /*##-3- Configure the DMA streams ##########################################*/
+   /* Set the parameters to be configured */
+   hdma_adc.Instance = ADCx_DMA_STREAM;
+
+   hdma_adc.Init.Channel  = ADCx_DMA_CHANNEL;
+   hdma_adc.Init.Direction = DMA_PERIPH_TO_MEMORY;
+   hdma_adc.Init.PeriphInc = DMA_PINC_DISABLE;
+   hdma_adc.Init.MemInc = DMA_MINC_ENABLE;
+   hdma_adc.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+   hdma_adc.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
+   hdma_adc.Init.Mode = DMA_CIRCULAR;
+   hdma_adc.Init.Priority = DMA_PRIORITY_HIGH;
+   hdma_adc.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+   hdma_adc.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_HALFFULL;
+   hdma_adc.Init.MemBurst = DMA_MBURST_SINGLE;
+   hdma_adc.Init.PeriphBurst = DMA_PBURST_SINGLE;
+
+   HAL_DMA_Init(&hdma_adc);
+
+   /* Associate the initialized DMA handle to the the ADC handle */
+   __HAL_LINKDMA(hadc, DMA_Handle, hdma_adc);
+
+   /*##-4- Configure the NVIC for DMA #########################################*/
+   /* NVIC configuration for DMA transfer complete interrupt */
+   HAL_NVIC_SetPriority(ADCx_DMA_IRQn, 15, 15);
+   HAL_NVIC_EnableIRQ(ADCx_DMA_IRQn);
 }
 
 /**

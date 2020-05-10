@@ -147,9 +147,9 @@ void EXTI15_10_IRQHandler(void)
 }
 
 
-void ADC_IRQHandler(void)
+void ADCx_DMA_IRQHandler(void)
 {
-  HAL_ADC_IRQHandler(&AdcHandle);
+  HAL_DMA_IRQHandler(AdcHandle.DMA_Handle);
 }
 
 /******************************************************************************/
