@@ -39,6 +39,7 @@ ADC_HandleTypeDef    AdcHandle;
 
 /* Variable used to get converted value */
 __IO uint16_t uhADCxConvertedValue = 0;
+__IO ITStatus UartReady = RESET;
 
 
 /* Private function prototypes -----------------------------------------------*/
@@ -59,9 +60,14 @@ void UartInit(void)
   UartHandle.Init.OverSampling = UART_OVERSAMPLING_16;
   UartHandle.Init.Mode       = UART_MODE_TX_RX;
   UartHandle.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-
-  HAL_UART_Init(&UartHandle);
-  BSP_COM_Init(COM1,&UartHandle);
+  if(HAL_UART_DeInit(&UartHandle) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if(HAL_UART_Init(&UartHandle) != HAL_OK)
+  {
+    Error_Handler();
+  }
 }
 
 void AdcInit(void)
@@ -144,15 +150,10 @@ int main(void)
   UartInit();
   AdcInit();
 
-  if (HAL_ADC_Start_IT(&AdcHandle) != HAL_OK)
-  {
-    /* Start Conversation Error */
-    Error_Handler();
-  }
   while(1)
   {
     sprintf(buffer, "Temperature: %.2f\r\n", (((float)uhADCxConvertedValue*5000.0/4096.0)/10.0)+2.0);
-    HAL_UART_Transmit(&UartHandle, (uint8_t*)buffer, strlen(buffer), 10);
+    HAL_UART_Transmit_IT(&UartHandle, (uint8_t*)buffer, strlen(buffer));
     HAL_Delay(1000);
   }
 }
@@ -223,6 +224,16 @@ static void SystemClock_Config(void)
   }
 }
 
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *UartHandle)
+{
+  /* Set transmission flag: transfer complete */
+  UartReady = SET;
+}
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *UartHandle)
+{
+    Error_Handler();
+}
 /**
   * @brief  This function is executed in case of error occurrence.
   * @param  None
@@ -272,12 +283,6 @@ void assert_failed(uint8_t* file, uint32_t line)
   }
 }
 #endif
-
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* AdcHandle)
-{
-  /* Get the converted value of regular channel */
-  uhADCxConvertedValue = HAL_ADC_GetValue(AdcHandle);
-}
 
 /**
   * @}
