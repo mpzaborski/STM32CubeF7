@@ -82,6 +82,9 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *hadc)
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(ADCx_CHANNEL_GPIO_PORT, &GPIO_InitStruct);
+
+  HAL_NVIC_SetPriority(ADCx_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(ADCx_IRQn);
 }
 
 /**

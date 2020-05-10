@@ -40,6 +40,9 @@
 
 /* Definition for ADCx's Channel */
 #define ADCx_CHANNEL                      ADC_CHANNEL_8
+
+/* Definition for ADCx's NVIC */
+#define ADCx_IRQn                         ADC_IRQn
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 

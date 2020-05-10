@@ -35,6 +35,7 @@
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+extern ADC_HandleTypeDef    AdcHandle;
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -145,6 +146,11 @@ void EXTI15_10_IRQHandler(void)
   HAL_GPIO_EXTI_IRQHandler(WAKEUP_BUTTON_PIN);
 }
 
+
+void ADC_IRQHandler(void)
+{
+  HAL_ADC_IRQHandler(&AdcHandle);
+}
 
 /******************************************************************************/
 /*                 STM32F7xx Peripherals Interrupt Handlers                   */

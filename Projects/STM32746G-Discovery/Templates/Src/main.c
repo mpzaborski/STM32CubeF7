@@ -138,14 +138,15 @@ int main(void)
   UartInit();
   AdcInit();
 
-  HAL_ADC_Start(&AdcHandle);
+  if (HAL_ADC_Start_IT(&AdcHandle) != HAL_OK)
+  {
+    /* Start Conversation Error */
+    Error_Handler();
+  }
   while(1)
   {
-    /*##-5- Get the converted value of regular channel  ########################*/
-    uhADCxConvertedValue = HAL_ADC_GetValue(&AdcHandle);
     sprintf(buffer, "Temperature: %.2f\r\n", (((float)uhADCxConvertedValue*5000.0/4096.0)/10.0)+2.0);
     HAL_UART_Transmit(&UartHandle, (uint8_t*)buffer, strlen(buffer), 10);
-    //HAL_ADC_Stop(&AdcHandle);
     HAL_Delay(1000);
   }
 }
@@ -265,6 +266,12 @@ void assert_failed(uint8_t* file, uint32_t line)
   }
 }
 #endif
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* AdcHandle)
+{
+  /* Get the converted value of regular channel */
+  uhADCxConvertedValue = HAL_ADC_GetValue(AdcHandle);
+}
 
 /**
   * @}
