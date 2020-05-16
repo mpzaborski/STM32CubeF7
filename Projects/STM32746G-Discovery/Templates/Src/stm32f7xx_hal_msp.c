@@ -71,22 +71,25 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *hadc)
   GPIO_InitTypeDef          GPIO_InitStruct;
 
   /*##-1- Enable peripherals and GPIO Clocks #################################*/
-  /* ADC3 Periph clock enable */
-  ADCx_CLK_ENABLE();
+  __HAL_RCC_ADC1_CLK_ENABLE();
+  __HAL_RCC_ADC3_CLK_ENABLE();
+
   /* Enable GPIO clock ****************************************/
-  ADCx_CHANNEL_GPIO_CLOCK_ENABLE();
+  __HAL_RCC_GPIOF_CLK_ENABLE();
 
   /*##-2- Configure peripheral GPIO ##########################################*/
   /* ADC Channel GPIO pin configuration */
-  GPIO_InitStruct.Pin = ADCx_CHANNEL_PIN;
+  GPIO_InitStruct.Pin = GPIO_PIN_10;
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(ADCx_CHANNEL_GPIO_PORT, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = GPIO_PIN_9;
+  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 }
 
 /**
   * @brief ADC MSP De-Initialization
-  *        This function frees the hardware resources used in this example:
   *          - Disable the Peripheral's clock
   *          - Revert GPIO to their default state
   * @param hadc: ADC handle pointer
@@ -101,9 +104,10 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef *hadc)
 
   /*##-2- Disable peripherals and GPIO Clocks ################################*/
   /* De-initialize the ADC Channel GPIO pin */
-  HAL_GPIO_DeInit(ADCx_CHANNEL_GPIO_PORT, ADCx_CHANNEL_PIN);
-}
+  HAL_GPIO_DeInit(GPIOF, GPIO_PIN_10);
+  HAL_GPIO_DeInit(GPIOF, GPIO_PIN_9);
 
+}
 /**
   * @}
   */

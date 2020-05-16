@@ -36,9 +36,11 @@
 /* Private variables ---------------------------------------------------------*/
 UART_HandleTypeDef UartHandle;
 ADC_HandleTypeDef    AdcHandle;
+ADC_HandleTypeDef    Adc2Handle;
 
 /* Variable used to get converted value */
-__IO uint16_t uhADCxConvertedValue = 0;
+__IO uint16_t temperature_raw = 0;
+__IO uint16_t battery_raw = 0;
 
 
 /* Private function prototypes -----------------------------------------------*/
@@ -73,7 +75,7 @@ void AdcInit(void)
   AdcHandle.Init.ClockPrescaler        = ADC_CLOCKPRESCALER_PCLK_DIV4;
   AdcHandle.Init.Resolution            = ADC_RESOLUTION_12B;
   AdcHandle.Init.ScanConvMode          = DISABLE;                       /* Sequencer disabled (ADC conversion on only 1 channel: channel set on rank 1) */
-  AdcHandle.Init.ContinuousConvMode    = ENABLE;                       /* Continuous mode disabled to have only 1 conversion at each conversion trig */
+  AdcHandle.Init.ContinuousConvMode    = DISABLE;                       /* Continuous mode disabled to have only 1 conversion at each conversion trig */
   AdcHandle.Init.DiscontinuousConvMode = DISABLE;                       /* Parameter discarded because sequencer is disabled */
   AdcHandle.Init.NbrOfDiscConversion   = 1;
   AdcHandle.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;        /* Conversion start trigged at each external event */
@@ -89,20 +91,42 @@ void AdcInit(void)
     Error_Handler();
   }
 
+  Adc2Handle.Instance          = ADC1;
 
-  /*##-2- Configure ADC regular channel ######################################*/
-  sConfig.Channel      = ADC_CHANNEL_8;
-  sConfig.Rank         = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_15CYCLES;
-  sConfig.Offset       = 0;
+  Adc2Handle.Init.ClockPrescaler        = ADC_CLOCKPRESCALER_PCLK_DIV4;
+  Adc2Handle.Init.Resolution            = ADC_RESOLUTION_12B;
+  Adc2Handle.Init.ScanConvMode          = DISABLE;                       /* Sequencer disabled (ADC conversion on only 1 channel: channel set on rank 1) */
+  Adc2Handle.Init.ContinuousConvMode    = DISABLE;                       /* Continuous mode disabled to have only 1 conversion at each conversion trig */
+  Adc2Handle.Init.DiscontinuousConvMode = DISABLE;                       /* Parameter discarded because sequencer is disabled */
+  Adc2Handle.Init.NbrOfDiscConversion   = 1;
+  Adc2Handle.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;        /* Conversion start trigged at each external event */
+  Adc2Handle.Init.ExternalTrigConv      = ADC_SOFTWARE_START;
+  Adc2Handle.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
+  Adc2Handle.Init.NbrOfConversion       = 1;
+  Adc2Handle.Init.DMAContinuousRequests = DISABLE;
+  Adc2Handle.Init.EOCSelection          = ADC_EOC_SEQ_CONV;
 
-  if (HAL_ADC_ConfigChannel(&AdcHandle, &sConfig) != HAL_OK)
+  if (HAL_ADC_Init(&Adc2Handle) != HAL_OK)
   {
-    /* Channel Configuration Error */
+    /* ADC initialization Error */
     Error_Handler();
   }
+
 }
 
+
+int adc_read(ADC_HandleTypeDef handle, uint32_t channel)
+{
+ ADC_ChannelConfTypeDef adc_ch;
+ adc_ch.Channel = channel;
+ adc_ch.Rank = ADC_REGULAR_RANK_1;
+ adc_ch.SamplingTime = ADC_SAMPLETIME_15CYCLES;
+ HAL_ADC_ConfigChannel(&handle, &adc_ch);
+
+ HAL_ADC_Start(&handle);
+ HAL_ADC_PollForConversion(&handle, 1000);
+    return HAL_ADC_GetValue(&handle);
+}
 
 /**
   * @brief  Main program
@@ -138,14 +162,19 @@ int main(void)
   UartInit();
   AdcInit();
 
-  HAL_ADC_Start(&AdcHandle);
+
   while(1)
   {
+
+    HAL_ADC_Start(&AdcHandle);
     /*##-5- Get the converted value of regular channel  ########################*/
-    uhADCxConvertedValue = HAL_ADC_GetValue(&AdcHandle);
-    sprintf(buffer, "Temperature: %.2f\r\n", (((float)uhADCxConvertedValue*5000.0/4096.0)/10.0)+2.0);
+    temperature_raw = adc_read(AdcHandle, ADC_CHANNEL_8);
+    sprintf(buffer, "Temperature: %.2f\r\n", (((float)temperature_raw*3300.0/4096.0)/10.0)+2.0);
     HAL_UART_Transmit(&UartHandle, (uint8_t*)buffer, strlen(buffer), 10);
-    //HAL_ADC_Stop(&AdcHandle);
+    battery_raw =adc_read(Adc2Handle, ADC_CHANNEL_VREFINT);
+    sprintf(buffer, "Battery: %.2f\r\n", (float)battery_raw*3300.0/4096.0);
+    HAL_UART_Transmit(&UartHandle, (uint8_t*)buffer, strlen(buffer), 10);
+
     HAL_Delay(1000);
   }
 }
