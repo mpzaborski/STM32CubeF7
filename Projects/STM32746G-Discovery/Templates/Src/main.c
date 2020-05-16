@@ -35,8 +35,8 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 UART_HandleTypeDef UartHandle;
-ADC_HandleTypeDef    AdcHandle;
-ADC_HandleTypeDef    Adc2Handle;
+ADC_HandleTypeDef    AdcHandle1;
+ADC_HandleTypeDef    AdcHandle2;
 
 /* Variable used to get converted value */
 __IO uint16_t temperature_raw = 0;
@@ -68,45 +68,32 @@ void UartInit(void)
 
 void AdcInit(void)
 {
-  ADC_ChannelConfTypeDef sConfig;
+  AdcHandle1.Instance          = ADC3;
 
-  AdcHandle.Instance          = ADC3;
+  AdcHandle1.Init.ClockPrescaler        = ADC_CLOCKPRESCALER_PCLK_DIV4;
+  AdcHandle1.Init.Resolution            = ADC_RESOLUTION_12B;
+  AdcHandle1.Init.ScanConvMode          = DISABLE;                       /* Sequencer disabled (ADC conversion on only 1 channel: channel set on rank 1) */
+  AdcHandle1.Init.ContinuousConvMode    = DISABLE;                       /* Continuous mode disabled to have only 1 conversion at each conversion trig */
+  AdcHandle1.Init.DiscontinuousConvMode = DISABLE;                       /* Parameter discarded because sequencer is disabled */
+  AdcHandle1.Init.NbrOfDiscConversion   = 1;
+  AdcHandle1.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;        /* Conversion start trigged at each external event */
+  AdcHandle1.Init.ExternalTrigConv      = ADC_SOFTWARE_START;
+  AdcHandle1.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
+  AdcHandle1.Init.NbrOfConversion       = 1;
+  AdcHandle1.Init.DMAContinuousRequests = DISABLE;
+  AdcHandle1.Init.EOCSelection          = ADC_EOC_SEQ_CONV;
 
-  AdcHandle.Init.ClockPrescaler        = ADC_CLOCKPRESCALER_PCLK_DIV4;
-  AdcHandle.Init.Resolution            = ADC_RESOLUTION_12B;
-  AdcHandle.Init.ScanConvMode          = DISABLE;                       /* Sequencer disabled (ADC conversion on only 1 channel: channel set on rank 1) */
-  AdcHandle.Init.ContinuousConvMode    = DISABLE;                       /* Continuous mode disabled to have only 1 conversion at each conversion trig */
-  AdcHandle.Init.DiscontinuousConvMode = DISABLE;                       /* Parameter discarded because sequencer is disabled */
-  AdcHandle.Init.NbrOfDiscConversion   = 1;
-  AdcHandle.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;        /* Conversion start trigged at each external event */
-  AdcHandle.Init.ExternalTrigConv      = ADC_SOFTWARE_START;
-  AdcHandle.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
-  AdcHandle.Init.NbrOfConversion       = 1;
-  AdcHandle.Init.DMAContinuousRequests = DISABLE;
-  AdcHandle.Init.EOCSelection          = ADC_EOC_SEQ_CONV;
-
-  if (HAL_ADC_Init(&AdcHandle) != HAL_OK)
+  if (HAL_ADC_Init(&AdcHandle1) != HAL_OK)
   {
     /* ADC initialization Error */
     Error_Handler();
   }
 
-  Adc2Handle.Instance          = ADC1;
+  memcpy(&AdcHandle2,&AdcHandle1,sizeof(ADC_HandleTypeDef));
+  AdcHandle2.Instance          = ADC1;
 
-  Adc2Handle.Init.ClockPrescaler        = ADC_CLOCKPRESCALER_PCLK_DIV4;
-  Adc2Handle.Init.Resolution            = ADC_RESOLUTION_12B;
-  Adc2Handle.Init.ScanConvMode          = DISABLE;                       /* Sequencer disabled (ADC conversion on only 1 channel: channel set on rank 1) */
-  Adc2Handle.Init.ContinuousConvMode    = DISABLE;                       /* Continuous mode disabled to have only 1 conversion at each conversion trig */
-  Adc2Handle.Init.DiscontinuousConvMode = DISABLE;                       /* Parameter discarded because sequencer is disabled */
-  Adc2Handle.Init.NbrOfDiscConversion   = 1;
-  Adc2Handle.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;        /* Conversion start trigged at each external event */
-  Adc2Handle.Init.ExternalTrigConv      = ADC_SOFTWARE_START;
-  Adc2Handle.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
-  Adc2Handle.Init.NbrOfConversion       = 1;
-  Adc2Handle.Init.DMAContinuousRequests = DISABLE;
-  Adc2Handle.Init.EOCSelection          = ADC_EOC_SEQ_CONV;
 
-  if (HAL_ADC_Init(&Adc2Handle) != HAL_OK)
+  if (HAL_ADC_Init(&AdcHandle2) != HAL_OK)
   {
     /* ADC initialization Error */
     Error_Handler();
@@ -166,13 +153,13 @@ int main(void)
   while(1)
   {
 
-    HAL_ADC_Start(&AdcHandle);
+    HAL_ADC_Start(&AdcHandle1);
     /*##-5- Get the converted value of regular channel  ########################*/
-    temperature_raw = adc_read(AdcHandle, ADC_CHANNEL_8);
-    sprintf(buffer, "Temperature: %.2f\r\n", (((float)temperature_raw*3300.0/4096.0)/10.0)+2.0);
+    temperature_raw = adc_read(AdcHandle1, ADC_CHANNEL_8);
+    sprintf(buffer, "Temperature: %.2f degC\r\n", (((float)temperature_raw*3300.0/4096.0)/10.0)+2.0);
     HAL_UART_Transmit(&UartHandle, (uint8_t*)buffer, strlen(buffer), 10);
-    battery_raw =adc_read(Adc2Handle, ADC_CHANNEL_VREFINT);
-    sprintf(buffer, "Battery: %.2f\r\n", (float)battery_raw*3300.0/4096.0);
+    battery_raw =adc_read(AdcHandle2, ADC_CHANNEL_VREFINT);
+    sprintf(buffer, "Battery: %.2f V\r\n", (float)battery_raw*3300.0/4096.0/1000);
     HAL_UART_Transmit(&UartHandle, (uint8_t*)buffer, strlen(buffer), 10);
 
     HAL_Delay(1000);
