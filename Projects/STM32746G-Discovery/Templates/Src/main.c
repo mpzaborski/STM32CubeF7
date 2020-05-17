@@ -32,10 +32,15 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
+#define I2C_MASTER_ADDRESS        0xFF
+#define I2C_TIMING      0x40912732
+#define I2C_SLAVE_ADDRESS 0x30
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 UART_HandleTypeDef UartHandle;
 ADC_HandleTypeDef    AdcHandle;
+I2C_HandleTypeDef I2cHandle;
+
 
 /* Variable used to get converted value */
 __IO uint16_t uhADCxConvertedValue = 0;
@@ -63,6 +68,26 @@ void UartInit(void)
   HAL_UART_Init(&UartHandle);
   BSP_COM_Init(COM1,&UartHandle);
 }
+
+void I2cInit(void)
+{
+  /*##-1- Configure the I2C peripheral ######################################*/
+  I2cHandle.Instance             = I2Cx;
+  I2cHandle.Init.Timing          = I2C_TIMING;
+  I2cHandle.Init.OwnAddress1     = I2C_MASTER_ADDRESS;
+  I2cHandle.Init.AddressingMode  = I2C_ADDRESSINGMODE_7BIT;
+  I2cHandle.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  I2cHandle.Init.OwnAddress2     = 0xFF;
+  I2cHandle.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  I2cHandle.Init.NoStretchMode   = I2C_NOSTRETCH_DISABLE;
+
+  if(HAL_I2C_Init(&I2cHandle) != HAL_OK)
+  {
+    /* Initialization Error */
+    Error_Handler();
+  }
+}
+
 
 void AdcInit(void)
 {
@@ -103,6 +128,49 @@ void AdcInit(void)
   }
 }
 
+#define POSITIVE_TEMPERATURE_RANGE 0x7FF
+
+#define MCP9808_TEMPERATURE_AMBIENT 0x05
+#define MCP9808_MANUFACTURER_ID 0x06
+
+// Example of temperature conversion. Potentially some errors there (i.e negative temperature)
+// https://www.digikey.pl/en/maker/projects/getting-started-with-stm32-i2c-example/ba8c2bfef2024654b5dd10012425fa23
+
+void mcp9808_read_temperature(char* result_buffer)
+{
+  uint16_t temperature;
+  float f_temperature;
+  HAL_I2C_Mem_Read(&I2cHandle, I2C_SLAVE_ADDRESS, MCP9808_TEMPERATURE_AMBIENT, 1, (uint8_t*)&temperature, sizeof(temperature), HAL_MAX_DELAY);
+  /* swap beacuse of endianess */
+  temperature = __REV16(temperature);
+  /* ignore alert pin state bits */
+  temperature = temperature & 0x1fff;
+  if ( temperature > POSITIVE_TEMPERATURE_RANGE)
+  {
+    temperature = ~temperature;
+    temperature+=1;
+    temperature = temperature & 0x7ff;
+    f_temperature = temperature * 0.0625;
+    f_temperature *= 100;
+    sprintf(result_buffer, "Temperature: -%d.%d\r\n", (int)f_temperature / 100, (int) f_temperature % 100);
+  }
+  else
+  {
+    temperature = temperature & 0x7ff;
+    f_temperature = temperature * 0.0625;
+    f_temperature *= 100;
+    sprintf(result_buffer, "Temperature: %d.%d\r\n", (int)f_temperature / 100, (int) f_temperature % 100);
+  }
+}
+
+uint16_t mcp9808_read_manufacturer_id(char* buffer)
+{
+  uint16_t manufacturer_id;
+  HAL_I2C_Mem_Read(&I2cHandle, I2C_SLAVE_ADDRESS, MCP9808_MANUFACTURER_ID, 1, (uint8_t*)&manufacturer_id, sizeof(manufacturer_id), HAL_MAX_DELAY);
+  manufacturer_id = __REV16(manufacturer_id);
+  sprintf(buffer, "manufacturer id: 0x%02x\r\n", manufacturer_id);
+  return manufacturer_id;
+}
 
 /**
   * @brief  Main program
@@ -112,6 +180,7 @@ void AdcInit(void)
 int main(void)
 {
   char buffer[40];
+  uint16_t result;
 
   /* This project template calls firstly CPU_CACHE_Enable() in order to enable the CPU Cache.
      This function is provided as template implementation that User may integrate 
@@ -137,13 +206,19 @@ int main(void)
 
   UartInit();
   AdcInit();
+  I2cInit();
+
+  result = mcp9808_read_manufacturer_id(buffer);
+  assert_param(result == 0x54);
+
+  HAL_UART_Transmit(&UartHandle, (uint8_t*)buffer, strlen(buffer), 10);
 
   HAL_ADC_Start(&AdcHandle);
   while(1)
   {
     /*##-5- Get the converted value of regular channel  ########################*/
     uhADCxConvertedValue = HAL_ADC_GetValue(&AdcHandle);
-    sprintf(buffer, "Temperature: %.2f\r\n", (((float)uhADCxConvertedValue*5000.0/4096.0)/10.0)+2.0);
+    mcp9808_read_temperature(buffer);
     HAL_UART_Transmit(&UartHandle, (uint8_t*)buffer, strlen(buffer), 10);
     //HAL_ADC_Stop(&AdcHandle);
     HAL_Delay(1000);
@@ -258,7 +333,9 @@ void assert_failed(uint8_t* file, uint32_t line)
 { 
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-
+  char buffer[80];
+  sprintf(buffer, "\r\nassert_failed(). file: %s, line: %ld\r\n", (char *) file, line );
+  HAL_UART_Transmit(&UartHandle, (uint8_t*)buffer, strlen(buffer), 10);
   /* Infinite loop */
   while (1)
   {
