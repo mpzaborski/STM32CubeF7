@@ -1,0 +1,3 @@
+[submodule "Projects/STM32746G-Discovery/Templates/stm32-ssd1306"]
+	path = Projects/STM32746G-Discovery/Templates/stm32-ssd1306
+	url = https://github.com/afiskon/stm32-ssd1306.git

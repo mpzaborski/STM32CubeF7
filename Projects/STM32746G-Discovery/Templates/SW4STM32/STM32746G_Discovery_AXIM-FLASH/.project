@@ -351,6 +351,11 @@
 			<locationURI>PARENT-2-PROJECT_LOC/Src/main.c</locationURI>
 		</link>
 		<link>
+			<name>Example/User/stm32-ssd1306</name>
+			<type>2</type>
+			<location>C:/Users/mateusz/projects/mpzaborski-stm32f7/Projects/STM32746G-Discovery/Templates/stm32-ssd1306</location>
+		</link>
+		<link>
 			<name>Example/User/stm32f7xx_hal_msp.c</name>
 			<type>1</type>
 			<locationURI>PARENT-2-PROJECT_LOC/Src/stm32f7xx_hal_msp.c</locationURI>

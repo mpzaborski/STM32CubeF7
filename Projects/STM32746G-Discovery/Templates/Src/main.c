@@ -19,6 +19,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "ssd1306.h"
 #include "string.h"
 #include <stdio.h>
 
@@ -152,14 +153,14 @@ void mcp9808_read_temperature(char* result_buffer)
     temperature = temperature & 0x7ff;
     f_temperature = temperature * 0.0625;
     f_temperature *= 100;
-    sprintf(result_buffer, "Temperature: -%d.%d\r\n", (int)f_temperature / 100, (int) f_temperature % 100);
+    sprintf(result_buffer, "-%d.%d C", (int)f_temperature / 100, ((int) f_temperature % 100)/10);
   }
   else
   {
     temperature = temperature & 0x7ff;
     f_temperature = temperature * 0.0625;
     f_temperature *= 100;
-    sprintf(result_buffer, "Temperature: %d.%d\r\n", (int)f_temperature / 100, (int) f_temperature % 100);
+    sprintf(result_buffer, "%d.%d C", (int)f_temperature / 100, ((int) f_temperature % 100)/10);
   }
 }
 
@@ -170,6 +171,16 @@ uint16_t mcp9808_read_manufacturer_id(char* buffer)
   manufacturer_id = __REV16(manufacturer_id);
   sprintf(buffer, "manufacturer id: 0x%02x\r\n", manufacturer_id);
   return manufacturer_id;
+}
+
+void ssd1306_print_temperature(char* buffer)
+{
+  ssd1306_Fill(White);
+  ssd1306_SetCursor(2, 0);
+  ssd1306_WriteString("Temperature", Font_11x18, Black);
+  ssd1306_SetCursor(2,18);
+  ssd1306_WriteString(buffer, Font_11x18, Black);
+  ssd1306_UpdateScreen();
 }
 
 /**
@@ -214,13 +225,17 @@ int main(void)
   HAL_UART_Transmit(&UartHandle, (uint8_t*)buffer, strlen(buffer), 10);
 
   HAL_ADC_Start(&AdcHandle);
+
+  ssd1306_Init();
+
   while(1)
   {
     /*##-5- Get the converted value of regular channel  ########################*/
     uhADCxConvertedValue = HAL_ADC_GetValue(&AdcHandle);
     mcp9808_read_temperature(buffer);
+
     HAL_UART_Transmit(&UartHandle, (uint8_t*)buffer, strlen(buffer), 10);
-    //HAL_ADC_Stop(&AdcHandle);
+    ssd1306_print_temperature(buffer);
     HAL_Delay(1000);
   }
 }
