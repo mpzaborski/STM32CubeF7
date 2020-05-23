@@ -27,6 +27,16 @@
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
+/* Definition for TIMx clock resources */
+#define TIMx                           TIM3
+#define TIMx_CLK_ENABLE()              __HAL_RCC_TIM3_CLK_ENABLE()
+
+
+/* Definition for TIMx's NVIC */
+#define TIMx_IRQn                      TIM3_IRQn
+#define TIMx_IRQHandler                TIM3_IRQHandler
+
+
 /* Definition for ADCx clock resources */
 #define ADCx_CLK_ENABLE()                 __HAL_RCC_ADC3_CLK_ENABLE()
 #define ADCx_CHANNEL_GPIO_CLOCK_ENABLE()  __HAL_RCC_GPIOF_CLK_ENABLE()

@@ -36,6 +36,7 @@
 /* Private variables ---------------------------------------------------------*/
 UART_HandleTypeDef UartHandle;
 ADC_HandleTypeDef    AdcHandle;
+TIM_HandleTypeDef    TimHandle;
 
 /* Variable used to get converted value */
 __IO uint16_t uhADCxConvertedValue = 0;
@@ -104,6 +105,34 @@ void AdcInit(void)
 }
 
 
+void TimerInit(void)
+{
+  uint32_t uwPrescalerValue;
+  /* Compute the prescaler value to have TIMx counter clock equal to 10000 Hz */
+  uwPrescalerValue = (uint32_t)((SystemCoreClock / 2) / 10000) - 1;
+
+  /* Set TIMx instance */
+  TimHandle.Instance = TIMx;
+
+  /* Initialize TIMx peripheral as follows:
+       + Period = 10000 - 1
+       + Prescaler = ((SystemCoreClock / 2)/10000) - 1
+       + ClockDivision = 0
+       + Counter direction = Up
+  */
+  TimHandle.Init.Period            = 10000 - 1;
+  TimHandle.Init.Prescaler         = uwPrescalerValue;
+  TimHandle.Init.ClockDivision     = 0;
+  TimHandle.Init.CounterMode       = TIM_COUNTERMODE_UP;
+  TimHandle.Init.RepetitionCounter = 0;
+  TimHandle.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&TimHandle) != HAL_OK)
+  {
+    /* Initialization Error */
+    Error_Handler();
+  }
+}
+
 /**
   * @brief  Main program
   * @param  None
@@ -137,8 +166,15 @@ int main(void)
 
   UartInit();
   AdcInit();
+  TimerInit();
 
   HAL_ADC_Start(&AdcHandle);
+  if (HAL_TIM_Base_Start_IT(&TimHandle) != HAL_OK)
+  {
+    /* Starting Error */
+    Error_Handler();
+  }
+
   while(1)
   {
     /*##-5- Get the converted value of regular channel  ########################*/
@@ -148,6 +184,12 @@ int main(void)
     //HAL_ADC_Stop(&AdcHandle);
     HAL_Delay(1000);
   }
+}
+
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  BSP_LED_Toggle(LED1);
 }
 
 
