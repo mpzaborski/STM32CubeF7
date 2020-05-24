@@ -258,7 +258,9 @@ void assert_failed(uint8_t* file, uint32_t line)
 { 
   /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-
+  char buffer[80];
+  sprintf(buffer, "\r\nassert_failed(). file: %s, line: %ld\r\n", (char *) file, line );
+  HAL_UART_Transmit(&UartHandle, (uint8_t*)buffer, strlen(buffer), 10);
   /* Infinite loop */
   while (1)
   {

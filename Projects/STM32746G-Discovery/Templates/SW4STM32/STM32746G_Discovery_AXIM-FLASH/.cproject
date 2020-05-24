@@ -121,6 +121,7 @@
 								<option id="com.atollic.truestudio.gcc.symbols.defined.186830994" name="Defined symbols" superClass="com.atollic.truestudio.gcc.symbols.defined" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="USE_HAL_DRIVER"/>
 									<listOptionValue builtIn="false" value="STM32F746xx"/>
+									<listOptionValue builtIn="false" value="USE_FULL_ASSERT"/>
 								</option>
 								<option id="com.atollic.truestudio.gcc.misc.otherflags.729508499" name="Other options" superClass="com.atollic.truestudio.gcc.misc.otherflags" useByScannerDiscovery="false" value="-fmessage-length=0 -Wno-strict-aliasing" valueType="string"/>
 								<option id="com.atollic.truestudio.common_options.target.mcpu.2137005285" name="Microcontroller" superClass="com.atollic.truestudio.common_options.target.mcpu" useByScannerDiscovery="false" value="STM32F746NG" valueType="enumerated"/>
